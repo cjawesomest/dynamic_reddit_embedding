@@ -8,6 +8,7 @@ from prawcore.exceptions import Forbidden as ForbiddenException
 from prawcore.exceptions import NotFound as NotFoundException
 from prawcore.exceptions import BadRequest as BadRequestException
 from prawcore.exceptions import TooLarge as TooLargeException
+from prawcore.exceptions import RequestException
 reddit = praw.Reddit("CJ")
 
 #Data structures for keeping track
@@ -57,6 +58,9 @@ def is_valid(some_reddit_object):
                 name_or_redirect = some_reddit_object.fullname
                 return 1
     except known_exceptions:
+        return 0
+    except RecursionError:
+        print('That\'s a lot of comments! Probably a bot...')
         return 0
 
 
@@ -142,7 +146,9 @@ def find_linked_subreddits(subreddit_name, reddit_credentials=None):
 def dated_post_query(post_object, latest_date, number_of_comments=100, more_comments_thresh=5):
     try:
         post_object.comments.replace_more(limit=more_comments_thresh, threshold=more_comments_thresh)
-    except (TooLargeException, AssertionError):
+    except (TooLargeException, RequestException, AssertionError):
+        #This happens because my HTTP request is too large and Reddit doesn't give it to me!
+        #That's alright because there is usually more than enough info even without all of the comments
         pass
     # except:
     #     error_type, error_value, traceback = sys.exc_info()

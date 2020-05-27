@@ -3,25 +3,50 @@ import os.path
 
 from datetime import datetime, timedelta
 from reddit_scrape import *
+from reddit_io import *
 
 if __name__ == "__main__":
     #Configure variables for program running
     # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "AskReddit"
+    subreddit_request = "AskReddit" 
     today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
     yesterday_date = today_date - timedelta(days=1)
-    number_of_days_retro = 14
-    # earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
-    earliest_date = datetime(2020, 5, 18)
-    max_number_of_nodes = 50
+    number_of_days_retro = 14 #Default 14
+    earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
+    # earliest_date = datetime(2020, 5, 21)
+    max_number_of_nodes = 50 #Default 50
 
     import_flag = 0
     output_flag = 1
     
     if import_flag:
-        #Implement
-        pass
+        #Check to see what data we have for the requested subreddit and consolidate it into a total file.
+        if not os.path.exists(os.path.join(os.path.dirname(__file__),"dat")):
+            print("Missing data folder! No data yet? : "+str(os.path.join(os.path.dirname(__file__)), "dat"))
+            data_imported = 0
+        else:
+            if not os.path.exists(os.path.join(os.path.dirname(__file__), "dat", subreddit_request)):
+                print("Missing data folder! No data yet? : "+str(os.path.join(os.path.dirname(__file__), "dat", subreddit_request)))
+                data_imported = 0
+            else:
+                try:
+                    [master_aux_path, master_post_path, master_comment_path] = consolidate_data_files(os.path.join(os.path.dirname(__file__),"dat", subreddit_request))
+                    with open(master_aux_path,'rb') as file:
+                        master_subreddit_info_dict = pickle.load(file)
+                    with open(master_post_path,'rb') as file:
+                        [master_node_list_post, master_node_colormap_list_post, master_node_labelmap_list_post, \
+                        master_edge_list_post, master_edge_colormap_list_post] = pickle.load(file)
+                    with open(master_comment_path,'rb') as file:
+                        [master_node_list_comment, master_node_colormap_list_comment, master_node_labelmap_list_comment, \
+                        master_edge_list_comment, master_edge_colormap_list_comment] = pickle.load(file)
+                    data_imported = 1
+                except FileNotFoundError:
+                    print("Could not find data files...")
+                    data_imported = 0
     else:
+        data_imported = 0
+    #No imported data? Go get some!
+    if not data_imported:
         current_search_date = earliest_date
         while (current_search_date < yesterday_date):
             #For the post track
@@ -110,7 +135,8 @@ if __name__ == "__main__":
                                 node_color_map_post.append(subreddit_search_level_post)
                                 nodes_post.append(connection)
                                 node_label_map_post[subreddit_count_post]=connection
-                                subreddits_remaining_post.append(connection)
+                                if explored_subreddit_count_post < max_number_of_nodes:
+                                    subreddits_remaining_post.append(connection)
                             edge_map_post.append([nodes_post.index(subreddit), nodes_post.index(connection)])
                             edge_color_map_post.append(subreddit_search_level_post)
                         explored_subreddit_count_post = explored_subreddit_count_post + 1
@@ -158,7 +184,8 @@ if __name__ == "__main__":
                                 node_color_map_comment.append(subreddit_search_level_comment)
                                 nodes_comment.append(connection)
                                 node_label_map_comment[subreddit_count_comment]=connection
-                                subreddits_remaining_comment.append(connection)
+                                if explored_subreddit_count_comment < max_number_of_nodes:
+                                    subreddits_remaining_comment.append(connection)
                             edge_map_comment.append([nodes_comment.index(subreddit), nodes_comment.index(connection)])
                             edge_color_map_comment.append(subreddit_search_level_comment)
                         explored_subreddit_count_comment = explored_subreddit_count_comment + 1
@@ -167,11 +194,12 @@ if __name__ == "__main__":
                         comment_finished = 1
                 finished = post_finished and comment_finished
             if output_flag:
+                search_date_string = str(current_search_date.year)+"_"+str(current_search_date.day)+"_"+str(current_search_date.month)+"_"
+                print("Outputting Reddit date for "+search_date_string+" starting at r/"+subreddit_request+"...")
                 if not os.path.exists(os.path.dirname(__file__)+"/dat"):
                     os.mkdir(os.path.dirname(__file__)+"/dat")
                 if not os.path.exists(os.path.dirname(__file__)+"/dat/"+subreddit_request):
                     os.mkdir(os.path.dirname(__file__)+"/dat/"+subreddit_request)
-                search_date_string = str(current_search_date.year)+"_"+str(current_search_date.day)+"_"+str(current_search_date.month)+"_"
                 auxilliary_file_name = search_date_string+subreddit_request+'.aux'
                 post_plot_file_name = search_date_string+subreddit_request+'_post.plt'
                 comment_plot_file_name = search_date_string+subreddit_request+'_comment.plt'
@@ -183,4 +211,23 @@ if __name__ == "__main__":
                 with open(os.path.dirname(__file__)+"/dat/"+subreddit_request+"/"+comment_plot_file_name,'wb+') as file:
                     pickle.dump([subreddit_start_comment, subreddit_count_comment, subreddit_search_level_comment, nodes_comment, subreddits_remaining_comment,\
                         edge_map_comment, edge_color_map_comment, node_color_map_comment, node_label_map_comment, explored_subreddit_count_comment], file)
+                print("Consolidating gathered data so far...")
+                try:
+                    [master_aux_path, master_post_path, master_comment_path] = consolidate_data_files(os.path.join(os.path.dirname(__file__),"dat", subreddit_request))
+                except FileNotFoundError:
+                    print("Something went wrong consolidating files! Moving on though, please fix me before plotting!")
             current_search_date = current_search_date + timedelta(days=1)
+
+#Now that we've got some data (generated or loaded), let's plot stuff!
+#Gather data in the form of the consolidated master files for any scraping request
+    if not data_imported:
+        with open(master_aux_path,'rb') as file:
+            master_subreddit_info_dict = pickle.load(file)
+        with open(master_post_path,'rb') as file:
+            [master_node_list_post, master_node_colormap_list_post, master_node_labelmap_list_post, \
+            master_edge_list_post, master_edge_colormap_list_post] = pickle.load(file)
+        with open(master_comment_path,'rb') as file:
+            [master_node_list_comment, master_node_colormap_list_comment, master_node_labelmap_list_comment, \
+            master_edge_list_comment, master_edge_colormap_list_comment] = pickle.load(file)
+    print('Time to implement plotting!!')
+    
