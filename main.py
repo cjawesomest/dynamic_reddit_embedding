@@ -4,6 +4,12 @@ import os.path
 from datetime import datetime, timedelta
 from reddit_scrape import *
 from reddit_io import *
+from embedded_plot import *
+
+import os
+import subprocess
+import matplotlib.pyplot as plt
+import numpy as np
 
 if __name__ == "__main__":
     #Configure variables for program running
@@ -16,7 +22,7 @@ if __name__ == "__main__":
     # earliest_date = datetime(2020, 5, 21)
     max_number_of_nodes = 50 #Default 50
 
-    import_flag = 0
+    import_flag = 1
     output_flag = 1
     
     if import_flag:
@@ -107,6 +113,9 @@ if __name__ == "__main__":
                             break
                         print("\tTraversing: r/"+str(subreddit)+" (Subreddit: "+str(explored_subreddit_count_post+1)+"/"+str(max_number_of_nodes)+")...")
                         sub_info = subreddit_info_dict[subreddit]
+                        if sub_info == None:
+                            print("\tNo info for r/"+subreddit+", something must have gone wrong...")
+                            continue
                         nth_top = 1
                         retrieved_user_data = 0
                         while not retrieved_user_data and nth_top <= len(sub_info.posts):
@@ -155,6 +164,9 @@ if __name__ == "__main__":
                             break
                         print("\tTraversing: r/"+str(subreddit)+" (Subreddit: "+str(explored_subreddit_count_comment+1)+"/"+str(max_number_of_nodes)+")...")
                         sub_info = subreddit_info_dict[subreddit]
+                        if sub_info == None:
+                            print("\tNo info for r/"+subreddit+", something must have gone wrong...")
+                            continue
                         comment_num = len(sub_info.get_comments_as_list())
                         nth_top = 1
                         retrieved_user_data = 0
@@ -229,5 +241,35 @@ if __name__ == "__main__":
         with open(master_comment_path,'rb') as file:
             [master_node_list_comment, master_node_colormap_list_comment, master_node_labelmap_list_comment, \
             master_edge_list_comment, master_edge_colormap_list_comment] = pickle.load(file)
-    print('Time to implement plotting!!')
+
+    labels_on = 0
+    normal_plot = 0
+    embedded_plot = 1
+
+    movie_flag = 1
+    if movie_flag:
+        frames = []
+    for t in range(len(master_node_list_post)):
+        print("Now plotting for r/"+subreddit_request+" at time point: "+str(t))
+        title = "Starting from r/"+subreddit_request+" at time point: "+str(t)
+        plt.figure()
+        if not labels_on:
+            labels = None
+        else:
+            labels = master_node_labelmap_list_post[t]
+        if normal_plot:
+            regular_plot(title, master_edge_list_post[t], node_labels=labels,
+                node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
+                with_labels=labels_on)
+        elif embedded_plot:
+            plot_embed_graph(title, master_edge_list_post[t], node_labels=labels,
+                node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
+                with_labels=labels_on)
+        if movie_flag:
+            fig_name = subreddit_request+"_plot_"+str(t)+"_temp.png"
+            plt.savefig(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
+            frames.append(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
+        plt.show()
+    for frame in frames:
+        os.remove(frame)
     

@@ -154,23 +154,26 @@ def dated_post_query(post_object, latest_date, number_of_comments=100, more_comm
     #     error_type, error_value, traceback = sys.exc_info()
     #     print('Error: %s: %s' % (error_value.filename, error_value.strerror))
     #     pass
-    all_comments = post_object.comments.list()
-    comment_list = []
-    for comment in all_comments:
-        if(isinstance(comment, MoreComments)):
-            continue
-        else:
-            comment_time = datetime.fromtimestamp(comment.created)
-            if comment_time < latest_date:
-                if comment.author == None:
-                    continue
-                comment_representation = RedditComment(comment)
-                comment_list.append(comment_representation)
-            else:
+    try:
+        all_comments = post_object.comments.list()
+        comment_list = []
+        for comment in all_comments:
+            if(isinstance(comment, MoreComments)):
                 continue
-        if len(comment_list) >= number_of_comments:
-            break
-    return comment_list
+            else:
+                comment_time = datetime.fromtimestamp(comment.created)
+                if comment_time < latest_date:
+                    if comment.author == None:
+                        continue
+                    comment_representation = RedditComment(comment)
+                    comment_list.append(comment_representation)
+                else:
+                    continue
+            if len(comment_list) >= number_of_comments:
+                break
+        return comment_list
+    except (TooLargeException, RequestException, AssertionError):
+        return []
 
 #Find the posts on a subreddit on a particular day
 #If no latest_date is specified, only searches on one day (24 hours)
@@ -179,71 +182,78 @@ def dated_post_query(post_object, latest_date, number_of_comments=100, more_comm
 #Returns the RedditSubreddit
 def dated_subreddit_query(subreddit_name, earliest_date, latest_date=None, number_of_posts=20):
     subreddit = reddit.subreddit(subreddit_name)
-    if(is_valid(subreddit)):
-        #Get the subscriber count
-        subscriber_count = subreddit.subscribers
+    try:
+        if(is_valid(subreddit)):
+            #Get the subscriber count
+            subscriber_count = subreddit.subscribers
 
-        #Determine search timeframe
-        time_delta = datetime.now()-earliest_date
-        if latest_date == None:
-            latest_date = earliest_date + timedelta(days=1)
-        if time_delta.days < 1: temporal_filter = 'day'
-        elif time_delta.days <= 7: temporal_filter = 'week'
-        elif time_delta.days <= 28: temporal_filter = 'month'
-        elif time_delta.days <= 365: temporal_filter = 'year'
-        else: temporal_filter = 'all'
-        timed_posts = subreddit.search("subreddit:"+subreddit_name, sort='top', time_filter=temporal_filter, limit=None)
-        
-        #Find posts within timeframe
-        list_of_posts = []
-        for submission in timed_posts:
-            post_date = datetime.fromtimestamp(submission.created)
-            if earliest_date <= post_date <= latest_date:
-                if submission.author == None:
+            #Determine search timeframe
+            time_delta = datetime.now()-earliest_date
+            if latest_date == None:
+                latest_date = earliest_date + timedelta(days=1)
+            if time_delta.days < 1: temporal_filter = 'day'
+            elif time_delta.days <= 7: temporal_filter = 'week'
+            elif time_delta.days <= 28: temporal_filter = 'month'
+            elif time_delta.days <= 365: temporal_filter = 'year'
+            else: temporal_filter = 'all'
+            timed_posts = subreddit.search("subreddit:"+subreddit_name, sort='top', time_filter=temporal_filter, limit=None)
+
+            #Find posts within timeframe
+            list_of_posts = []
+            for submission in timed_posts:
+                post_date = datetime.fromtimestamp(submission.created)
+                if earliest_date <= post_date <= latest_date:
+                    if submission.author == None:
+                        continue
+                    comments_list = dated_post_query(submission, latest_date)
+                    post_representation = RedditPost(submission)
+                    post_representation.setCommentList(comments_list)
+                    list_of_posts.append(post_representation)
+                    if len(list_of_posts) >= number_of_posts:
+                        break
+                else:
                     continue
-                comments_list = dated_post_query(submission, latest_date)
-                post_representation = RedditPost(submission)
-                post_representation.setCommentList(comments_list)
-                list_of_posts.append(post_representation)
-                if len(list_of_posts) >= number_of_posts:
-                    break
-            else:
-                continue
-        return RedditSubreddit(subscriber_count, list_of_posts)
-    else:
+            return RedditSubreddit(subscriber_count, list_of_posts)
+
+        else:
+            return None
+    except (TooLargeException, RequestException, AssertionError):
         return None
 
 def dated_user_query(username, earliest_date, latest_date=None, number_of_posts=20, number_of_comments=50):
     user = reddit.redditor(username)
-    if is_valid(user):
-        if latest_date == None:
-            latest_date = earliest_date + timedelta(days=1)
-        timed_posts = user.submissions.new(limit=None)
-        list_of_posts = []
-        for submission in timed_posts:
-            post_date = datetime.fromtimestamp(submission.created)
-            if earliest_date <= post_date <= latest_date:
-                comments_list = dated_post_query(submission, latest_date)
-                post_representation = RedditPost(submission)
-                post_representation.setCommentList(comments_list)
-                list_of_posts.append(post_representation)
-                if len(list_of_posts) >= number_of_posts:
-                    break
-            else:
-                continue
-        timed_comments = user.comments.new(limit=None)
-        list_of_comments=[]
-        for comment in timed_comments:
-            comment_time = datetime.fromtimestamp(comment.created)
-            if earliest_date <= comment_time <= latest_date:
-                comment_representation = RedditComment(comment)
-                list_of_comments.append(comment_representation)
-                if len(list_of_comments) >= number_of_comments:
-                    break
-            else:
-                continue
-        return list_of_posts, list_of_comments
-    else:
+    try:
+        if is_valid(user):
+            if latest_date == None:
+                latest_date = earliest_date + timedelta(days=1)
+            timed_posts = user.submissions.new(limit=None)
+            list_of_posts = []
+            for submission in timed_posts:
+                post_date = datetime.fromtimestamp(submission.created)
+                if earliest_date <= post_date <= latest_date:
+                    comments_list = dated_post_query(submission, latest_date)
+                    post_representation = RedditPost(submission)
+                    post_representation.setCommentList(comments_list)
+                    list_of_posts.append(post_representation)
+                    if len(list_of_posts) >= number_of_posts:
+                        break
+                else:
+                    continue
+            timed_comments = user.comments.new(limit=None)
+            list_of_comments=[]
+            for comment in timed_comments:
+                comment_time = datetime.fromtimestamp(comment.created)
+                if earliest_date <= comment_time <= latest_date:
+                    comment_representation = RedditComment(comment)
+                    list_of_comments.append(comment_representation)
+                    if len(list_of_comments) >= number_of_comments:
+                        break
+                else:
+                    continue
+            return list_of_posts, list_of_comments
+        else:
+            return None
+    except (TooLargeException, RequestException, AssertionError):
         return None
 
 if __name__ == "__main__":
