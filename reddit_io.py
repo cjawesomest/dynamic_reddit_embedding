@@ -41,6 +41,8 @@ def consolidate_data_files(path_to_data):
         with open(aux_file, 'rb') as file:
             sub_info_structure = pickle.load(file)
         for subreddit in sub_info_structure.keys():
+            if not sub_info_structure[subreddit]:
+                continue
             if sub_info_structure[subreddit].posts:
                 this_date = sub_info_structure[subreddit].posts[0].date
             if this_date < earliest_date:

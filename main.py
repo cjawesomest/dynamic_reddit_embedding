@@ -14,7 +14,7 @@ import numpy as np
 if __name__ == "__main__":
     #Configure variables for program running
     # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "AskReddit" 
+    subreddit_request = "Politics"
     today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
     yesterday_date = today_date - timedelta(days=1)
     number_of_days_retro = 14 #Default 14
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     
     if import_flag:
         #Check to see what data we have for the requested subreddit and consolidate it into a total file.
+        print("Now importing and consolidating data files...")
         if not os.path.exists(os.path.join(os.path.dirname(__file__),"dat")):
             print("Missing data folder! No data yet? : "+str(os.path.join(os.path.dirname(__file__)), "dat"))
             data_imported = 0
@@ -257,6 +258,9 @@ if __name__ == "__main__":
             labels = None
         else:
             labels = master_node_labelmap_list_post[t]
+        if not master_edge_colormap_list_post[t]:
+            print("There are no edges here? Strange. Moving on...")
+            continue
         if normal_plot:
             regular_plot(title, master_edge_list_post[t], node_labels=labels,
                 node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
