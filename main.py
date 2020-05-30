@@ -7,12 +7,12 @@ from reddit_scrape import *
 if __name__ == "__main__":
     #Configure variables for program running
     # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "AskReddit"
+    subreddit_request = "Bartenders"
     today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
     yesterday_date = today_date - timedelta(days=1)
     number_of_days_retro = 14
-    # earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
-    earliest_date = datetime(2020, 5, 18)
+    earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
+    # earliest_date = datetime(2020, 5, 20)
     max_number_of_nodes = 50
 
     import_flag = 0
@@ -82,6 +82,9 @@ if __name__ == "__main__":
                             break
                         print("\tTraversing: r/"+str(subreddit)+" (Subreddit: "+str(explored_subreddit_count_post+1)+"/"+str(max_number_of_nodes)+")...")
                         sub_info = subreddit_info_dict[subreddit]
+                        if sub_info == None:
+                            print("\tNo info for r/"+subreddit+"...")
+                            continue
                         nth_top = 1
                         retrieved_user_data = 0
                         while not retrieved_user_data and nth_top <= len(sub_info.posts):
@@ -129,6 +132,9 @@ if __name__ == "__main__":
                             break
                         print("\tTraversing: r/"+str(subreddit)+" (Subreddit: "+str(explored_subreddit_count_comment+1)+"/"+str(max_number_of_nodes)+")...")
                         sub_info = subreddit_info_dict[subreddit]
+                        if sub_info == None:
+                            print("\tNo info for r/"+subreddit+"...")
+                            continue
                         comment_num = len(sub_info.get_comments_as_list())
                         nth_top = 1
                         retrieved_user_data = 0
