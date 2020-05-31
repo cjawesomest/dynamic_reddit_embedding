@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from reddit_scrape import *
 from reddit_io import *
 from embedded_plot import *
+from embedded_dynamic import *
 
 import os
 import subprocess
@@ -14,7 +15,7 @@ import numpy as np
 if __name__ == "__main__":
     #Configure variables for program running
     # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "Politics"
+    subreddit_request = "Bartenders"
     today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
     yesterday_date = today_date - timedelta(days=1)
     number_of_days_retro = 14 #Default 14
@@ -246,34 +247,50 @@ if __name__ == "__main__":
     labels_on = 0
     normal_plot = 0
     embedded_plot = 1
+    dynamic_plot = 1
+    display_plots = 1
+    graph_list = []
 
     movie_flag = 1
     if movie_flag:
         frames = []
-    for t in range(len(master_node_list_post)):
-        print("Now plotting for r/"+subreddit_request+" at time point: "+str(t))
-        title = "Starting from r/"+subreddit_request+" at time point: "+str(t)
-        plt.figure()
-        if not labels_on:
-            labels = None
-        else:
-            labels = master_node_labelmap_list_post[t]
-        if not master_edge_colormap_list_post[t]:
-            print("There are no edges here? Strange. Moving on...")
-            continue
-        if normal_plot:
-            regular_plot(title, master_edge_list_post[t], node_labels=labels,
-                node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
-                with_labels=labels_on)
-        elif embedded_plot:
-            plot_embed_graph(title, master_edge_list_post[t], node_labels=labels,
-                node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
-                with_labels=labels_on)
-        if movie_flag:
-            fig_name = subreddit_request+"_plot_"+str(t)+"_temp.png"
-            plt.savefig(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
-            frames.append(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
-        plt.show()
-    for frame in frames:
-        os.remove(frame)
+    if not dynamic_plot:
+        for t in range(len(master_node_list_post)):
+            print("Now plotting for r/"+subreddit_request+" at time point: "+str(t))
+            title = "Starting from r/"+subreddit_request+" at time point: "+str(t)
+            plt.figure()
+            if not labels_on:
+                labels = None
+            else:
+                labels = master_node_labelmap_list_post[t]
+            if not master_edge_colormap_list_post[t]:
+                print("There are no edges here? Strange. Moving on...")
+                continue
+            this_graph = None
+            if normal_plot:
+                this_graph = regular_plot(title, master_edge_list_post[t], node_labels=labels,
+                    node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
+                    with_labels=labels_on)
+            elif embedded_plot:
+                this_graph = plot_embed_graph(title, master_edge_list_post[t], node_labels=labels,
+                    node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
+                    with_labels=labels_on)
+            if movie_flag:
+                fig_name = subreddit_request+"_plot_"+str(t)+"_temp.png"
+                plt.savefig(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
+                frames.append(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, fig_name))
+            if display_plots:
+                plt.show()
+            graph_list.append(this_graph)
+        for frame in frames:
+            os.remove(frame)
+        with open(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, "graph_list.grph"), 'wb+') as file:
+            pickle.dump(graph_list, file)
+    else:
+        with open(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, "graph_list.grph"), 'rb') as file:
+            graph_list = pickle.load(file)
+        plot_dynam_graph(title, graph_list)
+        if display_plots:
+            plt.show()
+
     
