@@ -15,7 +15,7 @@ import numpy as np
 if __name__ == "__main__":
     #Configure variables for program running
     # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "Bartenders"
+    subreddit_request = "AskReddit"
     today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
     yesterday_date = today_date - timedelta(days=1)
     number_of_days_retro = 14 #Default 14
@@ -246,8 +246,8 @@ if __name__ == "__main__":
 
     labels_on = 0
     normal_plot = 0
-    embedded_plot = 1
-    dynamic_plot = 1
+    embedded_plot = 0
+    dynamic_plot = 0
     display_plots = 1
     graph_list = []
 
@@ -287,10 +287,12 @@ if __name__ == "__main__":
         with open(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, "graph_list.grph"), 'wb+') as file:
             pickle.dump(graph_list, file)
     else:
-        with open(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, "graph_list.grph"), 'rb') as file:
-            graph_list = pickle.load(file)
-        plot_dynam_graph(title, graph_list)
-        if display_plots:
-            plt.show()
+        #Dynamic embedding doesn't work with graph set, still working on issue
+        pass
+        # with open(os.path.join(os.path.dirname(__file__),"dat", subreddit_request, "graph_list.grph"), 'rb') as file:
+        #     graph_list = pickle.load(file)
+        # plot_dynam_graph("Starting from r/"+subreddit_request+": Plotting Dynamic Change", graph_list)
+        # if display_plots:
+        #     plt.show()
 
     

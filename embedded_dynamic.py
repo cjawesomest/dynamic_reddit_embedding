@@ -14,8 +14,8 @@ from dynamicgem.graph_generation import dynamic_SBM_graph as sbm
 
 #import the methods
 from dynamicgem.embedding.ae_static    import AE
-from dynamicgem.embedding.dynamicTriad import dynamicTriad
-from dynamicgem.embedding.TIMERS       import TIMERS
+# from dynamicgem.embedding.dynamicTriad import dynamicTriad
+# from dynamicgem.embedding.TIMERS       import TIMERS
 from dynamicgem.embedding.dynAE        import DynAE
 from dynamicgem.embedding.dynRNN       import DynRNN
 from dynamicgem.embedding.dynAERNN     import DynAERNN
@@ -24,13 +24,18 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
+#Function not shown to work yet on any generated set
+#Would NOT RECOMMEND using
 def plot_dynam_graph(title, graph_list):
     #dynAERNN
-    graphs = graph_list
+    graphs = []
+    for graph in graph_list:
+        if not graph == None:
+            graphs.append(graph)
     dynamic_sbm_series = graphs
     outdir = os.path.exists(os.path.dirname(__file__)+"/out")
     testDataType = 'sbm_cd'
-    length = 7
+    length = len(graph_list)
     dim_emb  = 128
     lookback = 2
     embedding = DynAERNN(d   = dim_emb,
@@ -44,11 +49,11 @@ def plot_dynam_graph(title, graph_list):
                 n_iter         = 250,
                 xeta           = 1e-3,
                 n_batch        = 100,
-                modelfile      = ['./intermediate/enc_model_dynAERNN.json', 
-                                './intermediate/dec_model_dynAERNN.json'],
-                weightfile     = ['./intermediate/enc_weights_dynAERNN.hdf5', 
-                                './intermediate/dec_weights_dynAERNN.hdf5'],
-                savefilesuffix = "testing")
+                modelfile      = None, #['./intermediate/enc_model_dynAERNN.json', 
+                                #'./intermediate/dec_model_dynAERNN.json'],
+                weightfile     = None, #['./intermediate/enc_weights_dynAERNN.hdf5', 
+                                #'./intermediate/dec_weights_dynAERNN.hdf5'],
+                savefilesuffix = None) #"testing")
 
     embs = []
     t1 = time()
@@ -61,7 +66,7 @@ def plot_dynam_graph(title, graph_list):
     plot_dynamic_sbm_embedding.plot_dynamic_sbm_embedding_v2(embs[-5:-1], dynamic_sbm_series[-5:])    
     plt.show()
 
-    #dynamicTriad
+    # #dynamicTriad
     datafile  = dataprep_util.prep_input_dynTriad(graphs, length, testDataType)
     embedding= dynamicTriad(niters     = 20,
                     starttime  = 0,
