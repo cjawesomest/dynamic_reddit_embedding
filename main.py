@@ -3,9 +3,9 @@ import os.path
 
 from datetime import datetime, timedelta
 from reddit_scrape import *
-from reddit_io import *
+from local_io import *
 from embedded_plot import *
-from embedded_dynamic import *
+# from embedded_dynamic import *
 
 import os
 import subprocess
@@ -27,34 +27,15 @@ if __name__ == "__main__":
     output_flag = 1
     
     if import_flag:
-        #Check to see what data we have for the requested subreddit and consolidate it into a total file.
-        print("Now importing and consolidating data files...")
-        if not os.path.exists(os.path.join(os.path.dirname(__file__),"dat")):
-            print("Missing data folder! No data yet? : "+str(os.path.join(os.path.dirname(__file__)), "dat"))
-            data_imported = 0
-        else:
-            if not os.path.exists(os.path.join(os.path.dirname(__file__), "dat", subreddit_request)):
-                print("Missing data folder! No data yet? : "+str(os.path.join(os.path.dirname(__file__), "dat", subreddit_request)))
-                data_imported = 0
-            else:
-                try:
-                    [master_aux_path, master_post_path, master_comment_path] = consolidate_data_files(os.path.join(os.path.dirname(__file__),"dat", subreddit_request))
-                    with open(master_aux_path,'rb') as file:
-                        master_subreddit_info_dict = pickle.load(file)
-                    with open(master_post_path,'rb') as file:
-                        [master_node_list_post, master_node_colormap_list_post, master_node_labelmap_list_post, \
-                        master_edge_list_post, master_edge_colormap_list_post] = pickle.load(file)
-                    with open(master_comment_path,'rb') as file:
-                        [master_node_list_comment, master_node_colormap_list_comment, master_node_labelmap_list_comment, \
-                        master_edge_list_comment, master_edge_colormap_list_comment] = pickle.load(file)
-                    data_imported = 1
-                except FileNotFoundError:
-                    print("Could not find data files...")
-                    data_imported = 0
+        data_package = pickle_load(subreddit_request)
+        #TODO: Convenient class for all this gunk
+        master_subreddit_info_dict, master_node_list_post, master_node_colormap_list_post, master_node_labelmap_list_post, \
+                    master_edge_list_post, master_edge_colormap_list_post, master_node_list_comment, master_node_colormap_list_comment, master_node_labelmap_list_comment, \
+                    master_edge_list_comment, master_edge_colormap_list_comment = data_package
     else:
-        data_imported = 0
+        data_package = 0
     #No imported data? Go get some!
-    if not data_imported:
+    if not data_package == None:
         current_search_date = earliest_date
         while (current_search_date < yesterday_date):
             #For the post track
@@ -208,33 +189,18 @@ if __name__ == "__main__":
                         comment_finished = 1
                 finished = post_finished and comment_finished
             if output_flag:
-                search_date_string = str(current_search_date.year)+"_"+str(current_search_date.day)+"_"+str(current_search_date.month)+"_"
-                print("Outputting Reddit date for "+search_date_string+" starting at r/"+subreddit_request+"...")
-                if not os.path.exists(os.path.dirname(__file__)+"/dat"):
-                    os.mkdir(os.path.dirname(__file__)+"/dat")
-                if not os.path.exists(os.path.dirname(__file__)+"/dat/"+subreddit_request):
-                    os.mkdir(os.path.dirname(__file__)+"/dat/"+subreddit_request)
-                auxilliary_file_name = search_date_string+subreddit_request+'.aux'
-                post_plot_file_name = search_date_string+subreddit_request+'_post.plt'
-                comment_plot_file_name = search_date_string+subreddit_request+'_comment.plt'
-                with open(os.path.dirname(__file__)+"/dat/"+subreddit_request+"/"+auxilliary_file_name,'wb+') as file:
-                    pickle.dump(subreddit_info_dict, file)
-                with open(os.path.dirname(__file__)+"/dat/"+subreddit_request+"/"+post_plot_file_name,'wb+') as file:
-                    pickle.dump([subreddit_start_post, subreddit_count_post, subreddit_search_level_post, nodes_post, subreddits_remaining_post,\
-                        edge_map_post, edge_color_map_post, node_color_map_post, node_label_map_post, explored_subreddit_count_post], file)
-                with open(os.path.dirname(__file__)+"/dat/"+subreddit_request+"/"+comment_plot_file_name,'wb+') as file:
-                    pickle.dump([subreddit_start_comment, subreddit_count_comment, subreddit_search_level_comment, nodes_comment, subreddits_remaining_comment,\
-                        edge_map_comment, edge_color_map_comment, node_color_map_comment, node_label_map_comment, explored_subreddit_count_comment], file)
-                print("Consolidating gathered data so far...")
-                try:
-                    [master_aux_path, master_post_path, master_comment_path] = consolidate_data_files(os.path.join(os.path.dirname(__file__),"dat", subreddit_request))
-                except FileNotFoundError:
-                    print("Something went wrong consolidating files! Moving on though, please fix me before plotting!")
+                #TODO: Convenient class for all this gunk
+                [master_aux_path, master_post_path, master_comment_path] = pickle_save(data = [subreddit_info_dict, subreddit_start_post, subreddit_count_post, subreddit_search_level_post, nodes_post, subreddits_remaining_post,\
+                        edge_map_post, edge_color_map_post, node_color_map_post, node_label_map_post, explored_subreddit_count_post, subreddit_start_comment, subreddit_count_comment, subreddit_search_level_comment, nodes_comment, subreddits_remaining_comment,\
+                        edge_map_comment, edge_color_map_comment, node_color_map_comment, node_label_map_comment, explored_subreddit_count_comment],
+                    subreddit=subreddit_request,
+                    date = current_search_date)
             current_search_date = current_search_date + timedelta(days=1)
 
+#TODO: Put this plotting stuff into it's own set of functions
 #Now that we've got some data (generated or loaded), let's plot stuff!
 #Gather data in the form of the consolidated master files for any scraping request
-    if not data_imported:
+    if not data_package == None:
         with open(master_aux_path,'rb') as file:
             master_subreddit_info_dict = pickle.load(file)
         with open(master_post_path,'rb') as file:
@@ -271,6 +237,7 @@ if __name__ == "__main__":
                 this_graph = regular_plot(title, master_edge_list_post[t], node_labels=labels,
                     node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],
                     with_labels=labels_on)
+            #DOES NOT WORK
             elif embedded_plot:
                 this_graph = plot_embed_graph(title, master_edge_list_post[t], node_labels=labels,
                     node_colors=master_node_colormap_list_post[t], edge_colors=master_edge_colormap_list_post[t],

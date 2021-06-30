@@ -142,11 +142,12 @@ def find_linked_subreddits(subreddit_name, reddit_credentials=None):
 #New Functions: Try to Use These Instead
 
 #Find all comments on a post that were created before a particular date
-#Returns a list of RedditComment objects
+#Returns a list of RedditComment objects TODO: Maybe look at default number of comments
 def dated_post_query(post_object, latest_date, number_of_comments=100, more_comments_thresh=5):
     try:
         post_object.comments.replace_more(limit=more_comments_thresh, threshold=more_comments_thresh)
     except (TooLargeException, RequestException, AssertionError):
+        #TODO: See if there's a way to get around this
         #This happens because my HTTP request is too large and Reddit doesn't give it to me!
         #That's alright because there is usually more than enough info even without all of the comments
         pass
@@ -196,6 +197,7 @@ def dated_subreddit_query(subreddit_name, earliest_date, latest_date=None, numbe
             elif time_delta.days <= 28: temporal_filter = 'month'
             elif time_delta.days <= 365: temporal_filter = 'year'
             else: temporal_filter = 'all'
+            #TODO: Add ability to sort differently
             timed_posts = subreddit.search("subreddit:"+subreddit_name, sort='top', time_filter=temporal_filter, limit=None)
 
             #Find posts within timeframe
@@ -221,7 +223,10 @@ def dated_subreddit_query(subreddit_name, earliest_date, latest_date=None, numbe
         return None
 
 def dated_user_query(username, earliest_date, latest_date=None, number_of_posts=20, number_of_comments=50):
-    user = reddit.redditor(username)
+    if not username:
+        return None
+    else:
+        user = reddit.redditor(username)
     try:
         if is_valid(user):
             if latest_date == None:
