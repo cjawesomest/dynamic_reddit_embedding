@@ -1,0 +1,12 @@
+{
+    "Example 1": {
+        "request": "AskReddit",
+        "sub_limit": 50,
+        "end_date": "Today",
+        "start_date": "Lookback",
+        "lookback_days": 14,
+        "import_flag": 0, 
+        "export_flag": 1, 
+        "export_dir": "./dat"
+    }
+}

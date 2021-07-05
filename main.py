@@ -8,23 +8,44 @@ from embedded_plot import *
 # from embedded_dynamic import *
 
 import os
-import subprocess
+import sys
+import argparse
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-if __name__ == "__main__":
-    #Configure variables for program running
-    # subreddit_request = "NoStupidQuestions"
-    subreddit_request = "AskReddit"
-    today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
-    yesterday_date = today_date - timedelta(days=1)
-    number_of_days_retro = 14 #Default 14
-    earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
-    # earliest_date = datetime(2020, 5, 21)
-    max_number_of_nodes = 50 #Default 50
+# REQUIRED_ARGS = ["request", "sub_limit", "end_date", "start_date", "lookback_days",
+#     "import", "export", "export_dir"]
+EXAMPLE_ARGS_PATH = "./config_examples.json"
 
-    import_flag = 1
-    output_flag = 1
+def parse_args_json(example_name: str = "Example 1", 
+        json_arg_path: str = EXAMPLE_ARGS_PATH):
+    with open(json_arg_path) as json_file:
+        data = json.load(json_file)
+    return data[example_name]
+
+
+if __name__ == "__main__":
+    # Load default arguments
+    defaults = parse_args_json()
+    parser = argparse.ArgumentParser(description="Parsing arguments...")
+    for key in defaults.keys():
+        parser.add_argument('--'+key, default=defaults[key])
+    args = parser.parse_args()
+
+    # Assign values as necessary
+    subreddit_request = args.request
+    if args.end_date == "Today":
+        today_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
+        yesterday_date = today_date - timedelta(days=1)
+    number_of_days_retro = args.lookback_days
+    if args.start_date == "Lookback":
+        earliest_date = yesterday_date - timedelta(days=number_of_days_retro)
+    # earliest_date = datetime(2020, 5, 21)
+    max_number_of_nodes = args.sub_limit
+
+    import_flag = args.import_flag
+    output_flag = args.export_flag
     
     if import_flag:
         data_package = pickle_load(subreddit_request)
@@ -189,7 +210,7 @@ if __name__ == "__main__":
                         comment_finished = 1
                 finished = post_finished and comment_finished
             if output_flag:
-                #TODO: Convenient class for all this gunk
+                #TODO: Convenient class for all this gunk; Add customizable save location
                 [master_aux_path, master_post_path, master_comment_path] = pickle_save(data = [subreddit_info_dict, subreddit_start_post, subreddit_count_post, subreddit_search_level_post, nodes_post, subreddits_remaining_post,\
                         edge_map_post, edge_color_map_post, node_color_map_post, node_label_map_post, explored_subreddit_count_post, subreddit_start_comment, subreddit_count_comment, subreddit_search_level_comment, nodes_comment, subreddits_remaining_comment,\
                         edge_map_comment, edge_color_map_comment, node_color_map_comment, node_label_map_comment, explored_subreddit_count_comment],
