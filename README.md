@@ -13,3 +13,6 @@ Plots showcase snapshots of three subreddits from the dates of May 21st, 2020 to
 | r/AskReddit | ![r/AskReddit Plot over 2 weeks](img/AskReddit_plot_animated.gif?raw=true "AskReddit Plot") | ![r/AskReddit Plot Comments over 2 weeks](img/AskReddit_plot_animated_comment.gif?raw=true "AskReddit Comment Plot") |
 | r/Bartenders | ![r/Bartenders Plot over 2 weeks](img/Bartenders_plot_animated.gif?raw=true "Bartenders Plot") | ![r/Bartenders Plot Comments over 2 weeks](img/Bartenders_plot_animated_comment.gif?raw=true "Bartenders Comment Plot") |
 | r/Politics | ![r/Politics Plot over 2 weeks](img/Politics_plot_animated.gif?raw=true "Politics Plot") | ![r/Politics Plot Comments over 2 weeks](img/Politics_plot_animated_comment.gif?raw=true "Politics Comment Plot") |
+
+## To-Do (Perhaps)
+- [ ] Make those plots less psychedelic, or rather, more psychedelic... but *better*
